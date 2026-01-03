@@ -49,12 +49,15 @@ def crop_image_to_pose(image: torch.Tensor, ultralytics_model: YOLO, target_w, t
 
   # Get nose y
   nose_y = fix_scale_y(person_kpts[0][1], scale_y)
-  # nose_x = fix_scale_x(person_kpts[0][0], scale_x)
 
-  # Set nose coord to red
-  # image[0, :, nose_y, nose_x] = torch.tensor([1, 0, 0])
-  # image[0, :, nose_y-2, nose_x] = torch.tensor([1, 0, 0])
-  # image[0, :, nose_y-4, nose_x] = torch.tensor([1, 0, 0])
+  lower_bound_y = orig_h
+
+  has_hip = person_kpts[11][2] > HIP_CONF_THRESHOLD and person_kpts[12][2] > HIP_CONF_THRESHOLD
+  if has_hip:
+    hip_y = fix_scale_y((person_kpts[11][1] + person_kpts[12][1]) / 2, scale_y)
+    print(f"hip_y: {hip_y}")
+    lower_bound_y = int(min(lower_bound_y, hip_y - (hip_y - nose_y) * 0.4))
+  print(f"lower_bound_y: {lower_bound_y}")
 
   # Get shoulder center x
   x_center = fix_scale_x((person_kpts[5][0] + person_kpts[6][0]) / 2, scale_x)
@@ -83,7 +86,7 @@ def crop_image_to_pose(image: torch.Tensor, ultralytics_model: YOLO, target_w, t
     if y0_crop < 0:
       crop_h -= 2
       break
-    if y1_crop > orig_h:
+    if y1_crop > lower_bound_y:
       crop_h -= 2
       break
     if left_bound_hit and right_bound_hit:
