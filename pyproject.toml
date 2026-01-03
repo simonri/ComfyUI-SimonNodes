@@ -1,0 +1,15 @@
+[project]
+name = "yolo-pose"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "ultralytics>=8.3.245",
+]
+
+
+[tool.ruff]
+indent-width = 2
+line-length = 160
+target-version = "py312"
