@@ -20,5 +20,6 @@ def register_nodes(module_path: str, name: str, optional: bool = False) -> None:
 register_nodes(".src.nodes.ultralytics_model_loader", "Ultralytics Model Loader")
 register_nodes(".src.nodes.ultralytics_crop", "Ultralytics Crop")
 register_nodes(".src.nodes.seedvr_upscale", "SeedVR Upscale")
+register_nodes(".src.nodes.custom_vae.custom_vae", "Custom VAE")
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
