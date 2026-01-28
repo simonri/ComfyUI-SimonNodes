@@ -39,7 +39,7 @@ class VAEUtils_CustomVAELoader(VAELoader):
     else:
       vae_path = folder_paths.get_full_path_or_raise("vae", vae_name)
       sd = comfy.utils.load_torch_file(vae_path)
-    
+
     vae = CustomVAE(sd=sd)
     vae.throw_exception_if_invalid()
     vae.disable_offload = disable_offload
@@ -69,52 +69,18 @@ class VAEUtils_DisableVAEOffload:
 class VAEUtils_VAEDecodeTiled:
   @classmethod
   def INPUT_TYPES(s):
-    return {
-      "required": {
-        "samples": ("LATENT",),
-        "vae": ("VAE",),
-        "upscale": ("INT", {"default": -1, "min": -1, "tooltip": "Post upscale factor, -1=auto"}),
-        "tile": ("BOOLEAN", {"default": False}),
-        "tile_size": ("INT", {"default": 512, "min": 64, "max": 4096, "step": 32}),
-        "overlap": ("INT", {"default": 64, "min": 0, "max": 4096, "step": 32}),
-        "temporal_size": (
-          "INT",
-          {"default": 4096, "min": 8, "max": 4096, "step": 4, "tooltip": "Only used for video VAEs: Amount of frames to decode at a time."},
-        ),
-        "temporal_overlap": ("INT", {"default": 64, "min": 4, "max": 4096, "step": 4, "tooltip": "Only used for video VAEs: Amount of frames to overlap."}),
-      }
-    }
+    return {"required": {"samples": ("LATENT",), "vae": ("VAE",), "upscale": ("INT", {"default": -1, "min": -1, "tooltip": "Post upscale factor, -1=auto"})}}
 
   RETURN_TYPES = ("IMAGE",)
   FUNCTION = "decode"
   CATEGORY = "Simon"
 
-  def decode(self, samples, vae, upscale, tile, tile_size, overlap, temporal_size, temporal_overlap):
-    if tile_size < overlap * 4:
-      overlap = tile_size // 4
-    if temporal_size < temporal_overlap * 2:
-      temporal_overlap = temporal_overlap // 2
-    temporal_compression = vae.temporal_compression_decode()
-    if temporal_compression is not None:
-      temporal_size = max(2, temporal_size // temporal_compression)
-      temporal_overlap = max(1, min(temporal_size // 2, temporal_overlap // temporal_compression))
-    else:
-      temporal_size = None
-      temporal_overlap = None
+  def decode(self, samples, vae, upscale):
+    latent = samples["samples"]
+    if latent.is_nested:
+      latent = latent.unbind()[0]
 
-    compression = vae.spacial_compression_decode()
-
-    if tile:
-      images = vae.decode_tiled(
-        samples["samples"],
-        tile_x=tile_size // compression,
-        tile_y=tile_size // compression,
-        overlap=overlap // compression,
-        tile_t=temporal_size,
-        overlap_t=temporal_overlap,
-      )
-    else:
-      images = vae.decode(samples["samples"])
+    images = vae.decode(latent)
 
     if len(images.shape) == 5:  # Combine batches
       images = images.reshape(-1, images.shape[-3], images.shape[-2], images.shape[-1])
