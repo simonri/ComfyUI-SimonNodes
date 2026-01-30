@@ -22,6 +22,7 @@ from comfy_execution import caching
 # === GLOBALS ===
 # ==============================================================================
 
+_SETUP_DONE: bool = False  # Guard to prevent multiple setup() calls
 RELOADED_CLASS_TYPES: dict = {}  # Stores types of classes that have been reloaded.
 CUSTOM_NODE_ROOT: list[str] = folder_paths.folder_names_and_paths["custom_nodes"][0]  # Custom Node root directory list.
 
@@ -148,6 +149,7 @@ class DebouncedHotReloader(FileSystemEventHandler):
             reload_modules: list[str] = [
                 mod_name for mod_name in sys.modules.keys()
                 if module_name in mod_name and mod_name != module_name
+                and not mod_name.endswith('.hot_reload')  # Preserve hot_reload module
             ]
 
             # Unload dependent modules first
@@ -315,6 +317,10 @@ def monkeypatch():
 
 def setup():
     """Sets up the hot reload system."""
+    global _SETUP_DONE
+    if _SETUP_DONE:
+        return
+    _SETUP_DONE = True
     logging.info("[ComfyUI-HotReloadHack] Monkey patching comfy_execution.caching.BasicCache")
     monkeypatch()
     logging.info("[ComfyUI-HotReloadHack] Starting Hot Reloader")
