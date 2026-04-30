@@ -100,7 +100,7 @@ class SR_RIFE:
 
     try:
       # Lazy import to avoid loading architecture at module import time
-      from ..rife_arch import IFNet
+      from ...rife_arch import IFNet
 
       # Initialize model with correct architecture
       self.model = IFNet(arch_ver=config["arch"])
