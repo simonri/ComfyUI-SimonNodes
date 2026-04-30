@@ -169,12 +169,6 @@ class SR_SeedVR_Upscale:
       safe_arguments = {k: v if not (isinstance(v, str) and v.startswith('data:')) else f"<data_uri_{len(v)}_chars>" for k, v in arguments.items()}
       print(f"[Fal SeedVR Upscale] Making API call with arguments: {safe_arguments}")
 
-      # Force reload the fal_client module to avoid caching issues
-      import sys
-      if 'fal_client' in sys.modules:
-        del sys.modules['fal_client']
-      import fal_client
-
       # Submit the request synchronously
       print(f"[Fal SeedVR Upscale] Submitting upscale request...")
       result = fal_client.subscribe(

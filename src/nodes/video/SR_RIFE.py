@@ -1,6 +1,7 @@
 import torch
 from pathlib import Path
 from comfy.utils import ProgressBar
+import comfy.model_management
 
 
 class SR_RIFE:
@@ -41,13 +42,8 @@ class SR_RIFE:
     self.model = None
     self.current_ckpt = None
 
-    # Device selection: CUDA > MPS (Apple Silicon) > CPU
-    if torch.cuda.is_available():
-      self.device = torch.device("cuda")
-    elif torch.backends.mps.is_available():
-      self.device = torch.device("mps")
-    else:
-      self.device = torch.device("cpu")
+    # Use ComfyUI's selected device so its memory manager tracks RIFE's VRAM.
+    self.device = comfy.model_management.get_torch_device()
 
   def download_model(self, ckpt_name):
     """Download RIFE model weights to cache from HuggingFace"""
@@ -105,8 +101,9 @@ class SR_RIFE:
       # Initialize model with correct architecture
       self.model = IFNet(arch_ver=config["arch"])
 
-      # Load state dict
-      state_dict = torch.load(str(model_path), map_location=self.device)
+      # Load state dict; weights_only=True prevents arbitrary pickle execution
+      # from a downloaded .pth file.
+      state_dict = torch.load(str(model_path), map_location=self.device, weights_only=True)
       self.model.load_state_dict(state_dict)
       self.model.eval()
       self.model.to(self.device)
@@ -160,18 +157,24 @@ class SR_RIFE:
     output_frames = []
     pbar = ProgressBar(batch_size - 1)
 
+    # Move source frames to RIFE device once; keep predictions on GPU through
+    # the loop. The previous per-frame `.cpu()` ran (multiplier-1) device
+    # transfers per pair plus mixed-device cat at the end.
+    src_device = images.device
+    images_dev = images.to(self.device)
+
     # Process each pair of frames
     for i in range(batch_size - 1):
-      # Get frame pair
-      frame0 = images[i : i + 1]  # [1, H, W, C]
-      frame1 = images[i + 1 : i + 2]  # [1, H, W, C]
+      # Get frame pair (already on RIFE device)
+      frame0 = images_dev[i : i + 1]      # [1, H, W, C]
+      frame1 = images_dev[i + 1 : i + 2]  # [1, H, W, C]
 
       # Add first frame
       output_frames.append(frame0)
 
       # Convert to RIFE format (B, C, H, W)
-      img0 = frame0.permute(0, 3, 1, 2).to(self.device)
-      img1 = frame1.permute(0, 3, 1, 2).to(self.device)
+      img0 = frame0.permute(0, 3, 1, 2)
+      img1 = frame1.permute(0, 3, 1, 2)
 
       # Generate intermediate frames
       for j in range(1, multiplier):
@@ -181,8 +184,8 @@ class SR_RIFE:
           # Run RIFE inference
           pred = self.make_inference(model, img0, img1, timestep, ensemble)
 
-          # Convert back to ComfyUI format (B, H, W, C)
-          pred = pred.permute(0, 2, 3, 1).cpu()
+          # Convert back to ComfyUI format (B, H, W, C); stay on GPU
+          pred = pred.permute(0, 2, 3, 1)
           pred = torch.clamp(pred, 0, 1)
 
           output_frames.append(pred)
@@ -196,10 +199,10 @@ class SR_RIFE:
       pbar.update(1)
 
     # Add last frame
-    output_frames.append(images[-1:])
+    output_frames.append(images_dev[-1:])
 
-    # Concatenate all frames
-    result = torch.cat(output_frames, dim=0)
+    # Concatenate all frames on GPU, then move back to source device once.
+    result = torch.cat(output_frames, dim=0).to(src_device)
 
     print(f"✅ Interpolation complete: {batch_size} → {result.shape[0]} frames")
     return (result,)

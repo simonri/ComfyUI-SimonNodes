@@ -37,5 +37,9 @@ class SR_WanResolution:
     return (width, height)
 
 
-NODE_CLASS_MAPPINGS = {"SR_WanResolution": SR_WanResolution}
-NODE_DISPLAY_NAME_MAPPINGS = {"SR_WanResolution": SR_WanResolution.NAME}
+NODE_CLASS_MAPPINGS = {
+  "SR_WanResolution": SR_WanResolution,
+}
+NODE_DISPLAY_NAME_MAPPINGS = {
+  "SR_WanResolution": "SR Wan Resolution",
+}
