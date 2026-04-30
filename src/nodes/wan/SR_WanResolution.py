@@ -12,6 +12,7 @@ RESOLUTIONS = {
 class SR_WanResolution:
   """Resolution selector node with preset options and custom input."""
 
+  NAME = "SR Wan Resolution"
   CATEGORY = "Simon"
 
   @classmethod
