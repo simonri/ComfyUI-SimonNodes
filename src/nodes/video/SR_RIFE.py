@@ -22,12 +22,12 @@ class SR_RIFE:
     return {
       "required": {
         "images": ("IMAGE",),
-        "ckpt_name": (list(cls.CKPT_CONFIGS.keys()), {"default": "rife47"}),
+        "ckpt_name": (list(cls.CKPT_CONFIGS.keys()), {"default": "rife49"}),
         "multiplier": (
           "INT",
           {"default": 2, "min": 2, "max": 10, "step": 1, "display": "number", "tooltip": "Number of frames to generate between each pair (2 = 2x frames)"},
         ),
-        "ensemble": ("BOOLEAN", {"default": False, "tooltip": "Use ensemble for better quality (slower, runs model twice and averages results)"}),
+        "ensemble": ("BOOLEAN", {"default": True, "tooltip": "Use ensemble for better quality (slower, runs model twice and averages results)"}),
       },
     }
 
