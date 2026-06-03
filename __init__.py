@@ -39,4 +39,7 @@ register_nodes(".src.nodes.utility.SR_Seed", "SR Seed")
 register_nodes(".src.nodes.wan.SR_WanSampler", "SR Wan Sampler")
 register_nodes(".src.nodes.wan.SR_WanResolution", "SR Wan Resolution")
 
+# CONDITIONING NODES
+register_nodes(".src.nodes.conditioning.SR_CLIPTextEncodeCached", "SR CLIP Text Encode (Cached)")
+
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
