@@ -31,6 +31,7 @@ register_nodes(".src.nodes.image.SR_ImageResize", "SR Image Resize")
 
 # VIDEO NODES
 register_nodes(".src.nodes.video.SR_RIFE", "SR RIFE")
+register_nodes(".src.nodes.video.SR_SaveVideo", "SR Save Video")
 
 # UTILITY NODES
 register_nodes(".src.nodes.utility.SR_Seed", "SR Seed")
